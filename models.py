@@ -1,3 +1,4 @@
+from sqlalchemy.orm import validates
 from sqlalchemy import Column, String, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
@@ -14,6 +15,11 @@ class User(Base):
     username = Column(String, unique=True, nullable=False)
     phone_number = Column(String, unique=True)
     points = Column(Integer, default=0)
+
+    @validates('username')
+    def validate_username(self, _key, value):
+        assert len(value) >= 3 and len(value) <= 38, "Username must be between 3 and 38 characters"
+        return value.strip()
 
 
 class Match(Base):

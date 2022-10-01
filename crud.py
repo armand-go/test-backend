@@ -1,14 +1,22 @@
-from uuid import UUID
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from uuid import UUID
 import models
 import schemas
 
 
+
 def create_user(db: Session, user: schemas.User):
-    db_user = models.User(username=user.username, phone_number=user.phone_number)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+    try:
+        db_user = models.User(username=user.username, phone_number=user.phone_number)
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+    except AssertionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     return db_user
 
 
