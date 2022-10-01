@@ -84,7 +84,6 @@ def update_match(match_id: UUID, match: schemas.MatchUpdate, db: Session = Depen
     return crud.update_match(db, db_match, match)
 
 
-# TODO: Delete user shoudln't really delete user, but anonymising it.
 @app.delete("/matches/delete/{match_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_match(match_id: UUID, db: Session = Depends(get_db)):
     db_match = crud.get_match(db, match_id=match_id)
