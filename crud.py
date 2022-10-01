@@ -46,7 +46,7 @@ def delete_user(db: Session, db_user: schemas.User):
     db.commit()
 
 
-def create_match(db: Session, match: schemas.MatchBase):
+def create_match(db: Session, match: schemas.Match):
     db_match = models.Match(
         player_one_id=match.player_one_id,
         player_two_id=match.player_two_id,
@@ -59,3 +59,18 @@ def create_match(db: Session, match: schemas.MatchBase):
 
 def get_match(db: Session, match_id: UUID):
     return db.query(models.Match).filter(models.Match.id == match_id).first()
+
+
+def update_match(db: Session, db_match: schemas.Match, match_data: schemas.MatchUpdate):
+    match_data_dict = match_data.dict(exclude_unset=True)
+    for key, value in match_data_dict.items():
+        setattr(db_match, key, value)
+    db.add(db_match)
+    db.commit()
+    db.refresh(db_match)
+    return db_match
+
+
+def delete_match(db: Session, db_match: schemas.Match):
+    db.delete(db_match)
+    db.commit()

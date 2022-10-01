@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 
 class MatchResult(str, Enum):
-    palyer1 = "PLAYER1"
+    player1 = "PLAYER1"
     draw = "DRAW"
     player2 = "PLAYER2"
 
@@ -14,9 +14,10 @@ class MatchCreate(BaseModel):
     player_one_id: Optional[UUID] = None
     player_two_id: Optional[UUID] = None
 
-class MatchBase(MatchCreate):
+
+class Match(MatchCreate):
     id: UUID
-    result: MatchResult = Field(MatchResult.draw, alias='Result')
+    result: MatchResult
     score_one: int = 0
     score_two: int = 0
 
@@ -24,20 +25,26 @@ class MatchBase(MatchCreate):
         orm_mode = True
 
 
-class UserBase(BaseModel):
+class MatchUpdate(MatchCreate):
+    result: Optional[MatchResult] = None
+    score_one: Optional[int] = None
+    score_two: Optional[int] = None
+
+
+class UserCreate(BaseModel):
     username: str = None
     phone_number: str = None
 
 
-class UserUpdate(UserBase):
-    points: Optional[int] = 0
+class UserUpdate(UserCreate):
+    points: Optional[int] = None
 
 
-class User(UserBase):
+class User(UserCreate):
     id: UUID
     points: int = 0
-    matches_as_player_one: list[MatchBase]
-    matches_as_player_two: list[MatchBase]
+    matches_as_player_one: list[Match]
+    matches_as_player_two: list[Match]
 
     class Config:
         orm_mode = True

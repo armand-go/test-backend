@@ -21,7 +21,7 @@ def get_db():
 
 
 @app.post("/users/", response_model=schemas.User)
-def create_user(user: schemas.UserBase, db: Session = Depends(get_db)):
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_username(db, username=user.username)
     if db_user:
         raise HTTPException(
@@ -55,7 +55,7 @@ def update_user(user_id: UUID, user: schemas.UserUpdate, db: Session = Depends(g
 
 
 # TODO: Delete user shoudln't really delete user, but anonymising it.
-@app.delete("/users/delete", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete("/users/delete/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(user_id: UUID, db: Session = Depends(get_db)):
     db_user = crud.get_user(db, user_id=user_id)
     if db_user is None:
@@ -63,14 +63,31 @@ def delete_user(user_id: UUID, db: Session = Depends(get_db)):
     return crud.delete_user(db, db_user)
 
 
-@app.post("/matches/", response_model=schemas.MatchBase)
+@app.post("/matches/", response_model=schemas.Match)
 def create_match(match: schemas.MatchCreate, db: Session = Depends(get_db)):
     return crud.create_match(db=db, match=match)
 
 
-@app.get("/matches/{match_id}", response_model=schemas.MatchBase)
+@app.get("/matches/{match_id}", response_model=schemas.Match)
 def read_match(match_id: UUID, db: Session = Depends(get_db)):
     match = crud.get_match(db, match_id=match_id)
     if match is None:
         raise HTTPException(status_code=404, detail="Match not found.")
     return match
+
+
+@app.put("/matches/update/{match_id}", response_model=schemas.Match)
+def update_match(match_id: UUID, match: schemas.MatchUpdate, db: Session = Depends(get_db)):
+    db_match = crud.get_match(db, match_id=match_id)
+    if db_match is None:
+        raise HTTPException(status_code=404, detail="Match not found.")
+    return crud.update_match(db, db_match, match)
+
+
+# TODO: Delete user shoudln't really delete user, but anonymising it.
+@app.delete("/matches/delete/{match_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_match(match_id: UUID, db: Session = Depends(get_db)):
+    db_match = crud.get_match(db, match_id=match_id)
+    if db_match is None:
+        raise HTTPException(status_code=404, detail="Match not found.")
+    return crud.delete_match(db, db_match)
