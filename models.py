@@ -1,7 +1,9 @@
+from email.policy import default
 from sqlalchemy.orm import validates, relationship
-from sqlalchemy import Column, String, Integer, ForeignKey
+from sqlalchemy import Column, String, Integer, ForeignKey, Enum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
+import enum
 
 import uuid
 
@@ -27,6 +29,12 @@ class User(Base):
         return value_stripped.strip()
 
 
+class MatchResultEnum(enum.Enum):
+    palyer1 = "PLAYER1"
+    draw = "DRAW"
+    player2 = "PLAYER2"
+
+
 class Match(Base):
     __tablename__ = "matches"
 
@@ -35,5 +43,5 @@ class Match(Base):
     player_one = relationship("User", back_populates="matches")
     player_two_id = Column(UUID, ForeignKey("users.id"))
     player_two = relationship("User", back_populates="matches")
-    result = Column(String)
+    result = Column(Enum(MatchResultEnum), default=MatchResultEnum.draw, nullable=False)
     # score = 
