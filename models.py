@@ -1,5 +1,5 @@
-from sqlalchemy.orm import validates
-from sqlalchemy import Column, String, Integer
+from sqlalchemy.orm import validates, relationship
+from sqlalchemy import Column, String, Integer, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -16,6 +16,8 @@ class User(Base):
     phone_number = Column(String, unique=True)
     points = Column(Integer, default=0)
 
+    matches = relationship("Match")
+
     @validates('username')
     def validate_username(self, _key, value):
         value_stripped = value.strip()
@@ -29,7 +31,9 @@ class Match(Base):
     __tablename__ = "matches"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    # player_one
-    # player_2
-    # result
-    # score
+    player_one_id = Column(UUID, ForeignKey("users.id"))
+    player_one = relationship("User", back_populates="matches")
+    player_two_id = Column(UUID, ForeignKey("users.id"))
+    player_two = relationship("User", back_populates="matches")
+    result = Column(String)
+    # score = 
