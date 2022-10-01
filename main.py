@@ -2,7 +2,9 @@ from uuid import UUID
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from db import engine, SessionLocal
-from . import models, schemas, crud
+import models
+import schemas
+import crud
 
 
 models.Base.metadata.create_all(bind=engine)
