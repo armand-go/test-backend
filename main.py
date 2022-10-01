@@ -30,6 +30,7 @@ def create_user(user: schemas.UserBase, db: Session = Depends(get_db)):
         )
     return crud.create_user(db=db, user=user)
 
+
 # TODO: Implement pagination and filter
 @app.get("/users/", response_model=list[schemas.User])
 def read_users(db: Session = Depends(get_db), skip: int = 0, limit: int = 100):
@@ -60,3 +61,16 @@ def delete_user(user_id: UUID, db: Session = Depends(get_db)):
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found.")
     return crud.delete_user(db, db_user)
+
+
+@app.post("/matches/", response_model=schemas.MatchBase)
+def create_match(match: schemas.MatchCreate, db: Session = Depends(get_db)):
+    return crud.create_match(db=db, match=match)
+
+
+@app.get("/matches/{match_id}", response_model=schemas.MatchBase)
+def read_match(match_id: UUID, db: Session = Depends(get_db)):
+    match = crud.get_match(db, match_id=match_id)
+    if match is None:
+        raise HTTPException(status_code=404, detail="Match not found.")
+    return match
