@@ -1,6 +1,7 @@
 from uuid import UUID
 from sqlalchemy.orm import Session
-import models, schemas
+from . import models, schemas
+
 
 def create_user(db: Session, user: schemas.User):
     db_user = models.User(username=user.username, phone_number=user.phone_number)
@@ -34,4 +35,4 @@ def update_user(db: Session, db_user: schemas.User, user_data: schemas.UserUpdat
 
 def delete_user(db: Session, db_user: schemas.User):
     db.delete(db_user)
-    db.commit()  
+    db.commit()

@@ -1,15 +1,14 @@
-from urllib import response
 from uuid import UUID
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from db import engine, SessionLocal
-
-import models, schemas, crud
+from . import models, schemas, crud
 
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
 
 def get_db():
     db = SessionLocal()
