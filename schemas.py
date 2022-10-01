@@ -1,7 +1,8 @@
-from typing import Optional
+from typing import Optional, Dict
 from uuid import UUID
 from enum import Enum
-from pydantic import BaseModel
+from datetime import datetime
+from pydantic import BaseModel, Json
 
 
 class MatchResult(str, Enum):
@@ -45,6 +46,21 @@ class User(UserCreate):
     points: int = 0
     matches_as_player_one: list[Match]
     matches_as_player_two: list[Match]
+
+    class Config:
+        orm_mode = True
+
+
+class TournamentCreate(BaseModel):
+    max_player: Optional[int] = None
+    begin: datetime
+    end: datetime
+    rewards_range: Optional[Dict[str, int]] = None
+
+
+class Tournament(TournamentCreate):
+    id: UUID
+    rewards_sum: int
 
     class Config:
         orm_mode = True

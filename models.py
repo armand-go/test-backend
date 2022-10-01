@@ -1,8 +1,11 @@
 from sqlalchemy.orm import validates, relationship
-from sqlalchemy import Column, String, Integer, ForeignKey, Enum
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import (
+    Column, String, Integer, ForeignKey, Enum, DateTime
+)
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.ext.declarative import declarative_base
 import uuid
+import re
 
 Base = declarative_base()
 
@@ -51,3 +54,23 @@ class Match(Base):
     )
     score_one = Column(Integer, default=0)
     score_two = Column(Integer, default=0)
+
+
+class Tournament(Base):
+    __tablename__ = "tournaments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    max_player = Column(Integer, default=20)
+
+    begin = Column(DateTime(timezone=True), nullable=False)
+    end = Column(DateTime(timezone=True), nullable=False)
+    rewards_sum = Column(Integer, default=0)
+
+    rewards_range = Column(JSONB, default="{}")
+
+    @validates('rewards_range')
+    def validate_rewards_range(self, _key, value):
+        for key in value.keys():
+            assert re.match("(^\d{1,2}-\d{1,2}$)", key), \
+                f"The key {key} doesn't have the correct format"
+        return value
