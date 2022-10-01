@@ -5,7 +5,6 @@ import models
 import schemas
 
 
-
 def create_user(db: Session, user: schemas.User):
     try:
         db_user = models.User(username=user.username, phone_number=user.phone_number)

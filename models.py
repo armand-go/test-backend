@@ -18,8 +18,11 @@ class User(Base):
 
     @validates('username')
     def validate_username(self, _key, value):
-        assert len(value) >= 3 and len(value) <= 38, "Username must be between 3 and 38 characters"
-        return value.strip()
+        value_stripped = value.strip()
+        assert len(value_stripped) >= 3 and len(value_stripped) <= 38, \
+            "Username must be between 3 and 38 characters"
+
+        return value_stripped.strip()
 
 
 class Match(Base):
