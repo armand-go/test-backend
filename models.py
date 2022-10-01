@@ -44,4 +44,5 @@ class Match(Base):
     player_two_id = Column(UUID, ForeignKey("users.id"))
     player_two = relationship("User", back_populates="matches")
     result = Column(Enum(MatchResultEnum), default=MatchResultEnum.draw, nullable=False)
-    # score = 
+    score_one = Column(Integer, default=0)
+    score_two = Column(Integer, default=0)
