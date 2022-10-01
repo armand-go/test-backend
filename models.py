@@ -2,7 +2,6 @@ from sqlalchemy.orm import validates, relationship
 from sqlalchemy import Column, String, Integer, ForeignKey, Enum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
-import enum
 import uuid
 
 Base = declarative_base()
