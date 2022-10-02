@@ -51,14 +51,14 @@ class User(UserCreate):
         orm_mode = True
 
 
-class TournamentCreate(BaseModel):
+class TournamentCreateUpdate(BaseModel):
     max_player: Optional[int] = None
     begin: datetime
     end: datetime
     rewards_range: Optional[Dict[str, int]] = None
 
 
-class Tournament(TournamentCreate):
+class Tournament(TournamentCreateUpdate):
     id: UUID
     rewards_sum: int
 
