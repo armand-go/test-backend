@@ -38,10 +38,14 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)) -> sche
     return crud.create_user(db=db, user=user)
 
 
-# TODO: Implement pagination and filter
 @app.get("/users/", response_model=list[schemas.User])
-def read_users(db: Session = Depends(get_db), skip: int = 0, limit: int = 100) -> schemas.User:
-    users = crud.get_users(db, skip, limit)
+def read_users(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    filter: str = ""
+) -> schemas.User:
+    users = crud.get_users(db, skip, limit, filter)
     return users
 
 

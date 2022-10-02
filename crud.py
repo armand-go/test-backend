@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from uuid import UUID
 import models
 import schemas
@@ -31,8 +32,15 @@ def get_user(db: Session, user_id: UUID):
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
-def get_users(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.User).offset(skip).limit(limit).all()
+def get_users(db: Session, skip: int = 0, limit: int = 100, filter: str = ""):
+    return (
+        db.
+        query(models.User)
+        .filter(func.lower(models.User.username).contains(func.lower(filter)))
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
 def update_user(db: Session, db_user: schemas.User, user_data: schemas.UserUpdate):
