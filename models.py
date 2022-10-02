@@ -1,8 +1,12 @@
 from sqlalchemy.orm import validates, relationship
-from sqlalchemy import Column, String, Integer, ForeignKey, Enum
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import (
+    Column, String, Integer, ForeignKey, Enum, DateTime
+)
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.ext.declarative import declarative_base
+import datetime as D
 import uuid
+import re
 
 Base = declarative_base()
 
@@ -30,6 +34,13 @@ class User(Base):
 
         return value_stripped.strip()
 
+    def matches(self):
+        return list(
+            set(
+                self.matches_as_player_one.extends(self.matches_as_player_two)
+            )
+        )
+
 
 class Match(Base):
     __tablename__ = "matches"
@@ -51,3 +62,31 @@ class Match(Base):
     )
     score_one = Column(Integer, default=0)
     score_two = Column(Integer, default=0)
+
+
+class Tournament(Base):
+    __tablename__ = "tournaments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    max_player = Column(Integer, default=20)
+
+    begin = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=D.datetime.utcnow() + D.timedelta(minutes=30)
+    )
+    end = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=D.datetime.utcnow() + D.timedelta(hours=1)
+    )
+    rewards_sum = Column(Integer, default=0)
+
+    rewards_range = Column(JSONB, default="{}")
+
+    @validates('rewards_range')
+    def validate_rewards_range(self, _key, value):
+        for key in value.keys():
+            assert re.match("(^[0-9]{1,2}-[0-9]{1,2}$)", key), \
+                f"The key {key} doesn't have the correct format"
+        return value

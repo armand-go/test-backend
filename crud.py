@@ -74,3 +74,61 @@ def update_match(db: Session, db_match: schemas.Match, match_data: schemas.Match
 def delete_match(db: Session, db_match: schemas.Match):
     db.delete(db_match)
     db.commit()
+
+
+def create_tournament(db: Session, tournament: schemas.TournamentCreateUpdate):
+    try:
+        rewards_sum = 0
+        for key, value in tournament.rewards_range.items():
+            (inf, sup) = key.split('-')
+            multiplier = int(sup) - int(inf) + 1
+            rewards_sum += value * multiplier
+
+        db_tournament = models.Tournament(
+            max_player=tournament.max_player,
+            begin=tournament.begin,
+            end=tournament.end,
+            rewards_sum=rewards_sum,
+            rewards_range=tournament.rewards_range
+        )
+        db.add(db_tournament)
+        db.commit()
+        db.refresh(db_tournament)
+    except AssertionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e) + ". Check the range has the correct format."
+        )
+    return db_tournament
+
+
+def get_tournament(db: Session, tournament_id: UUID):
+    return db.query(models.Tournament).filter(models.Tournament.id == tournament_id).first()
+
+
+def get_tournaments(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Tournament).offset(skip).limit(limit).all()
+
+
+def update_tournament(
+    db: Session,
+    db_tournament: schemas.Tournament,
+    tournament_data: schemas.TournamentCreateUpdate
+):
+    tournament_data_dict = tournament_data.dict(exclude_unset=True)
+    for key, value in tournament_data_dict.items():
+        setattr(db_tournament, key, value)
+    db.add(db_tournament)
+    db.commit()
+    db.refresh(db_tournament)
+    return db_tournament
+
+
+def delete_tournament(db: Session, db_tournament: schemas.Tournament):
+    db.delete(db_tournament)
+    db.commit()

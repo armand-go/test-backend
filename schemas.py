@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Optional, Dict
 from uuid import UUID
 from enum import Enum
+from datetime import datetime
 from pydantic import BaseModel
 
 
@@ -45,6 +46,21 @@ class User(UserCreate):
     points: int = 0
     matches_as_player_one: list[Match]
     matches_as_player_two: list[Match]
+
+    class Config:
+        orm_mode = True
+
+
+class TournamentCreateUpdate(BaseModel):
+    max_player: Optional[int] = None
+    begin: Optional[datetime] = None
+    end: Optional[datetime] = None
+    rewards_range: Optional[Dict[str, int]] = {}
+
+
+class Tournament(TournamentCreateUpdate):
+    id: UUID
+    rewards_sum: int
 
     class Config:
         orm_mode = True

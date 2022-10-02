@@ -90,3 +90,42 @@ def delete_match(match_id: UUID, db: Session = Depends(get_db)):
     if db_match is None:
         raise HTTPException(status_code=404, detail="Match not found.")
     return crud.delete_match(db, db_match)
+
+
+@app.post("/tournaments/", response_model=schemas.Tournament)
+def create_tournament(tournament: schemas.TournamentCreateUpdate, db: Session = Depends(get_db)):
+    return crud.create_tournament(db=db, tournament=tournament)
+
+
+@app.get("/tournaments/", response_model=list[schemas.Tournament])
+def read_tournaments(db: Session = Depends(get_db), skip: int = 0, limit: int = 100):
+    tournaments = crud.get_tournaments(db, skip, limit)
+    return tournaments
+
+
+@app.get("/tournaments/{tournament_id}", response_model=schemas.Tournament)
+def read_tournament(tournament_id: UUID, db: Session = Depends(get_db)):
+    tournament = crud.get_tournament(db, tournament_id=tournament_id)
+    if tournament is None:
+        raise HTTPException(status_code=404, detail="Tournament not found.")
+    return tournament
+
+
+@app.put("/tournaments/update/{tournament_id}", status_code=status.HTTP_204_NO_CONTENT)
+def update_tournament(
+    tournament_id: UUID,
+    tournament: schemas.TournamentCreateUpdate,
+    db: Session = Depends(get_db)
+):
+    db_tournament = crud.get_tournament(db, tournament_id=tournament_id)
+    if db_tournament is None:
+        raise HTTPException(status_code=404, detail="Tournament not found.")
+    return crud.update_tournament(db, db_tournament, tournament)
+
+
+@app.delete("/tournaments/delete/{tournament_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_tournament(tournament_id: UUID, db: Session = Depends(get_db)):
+    db_tournament = crud.get_tournament(db, tournament_id=tournament_id)
+    if db_tournament is None:
+        raise HTTPException(status_code=404, detail="Match not found.")
+    return crud.delete_tournament(db, db_tournament)
