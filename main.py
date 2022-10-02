@@ -363,6 +363,35 @@ def result_match(
     db_tournament = crud.update_tournament(db, db_tournament, tournament_data)
 
 
+@app.post("/tournaments/{tournament_id}/end")
+def end_tournament(tournament_id: UUID, db: Session = Depends(get_db)):
+    tournament_leaderboard = leaderboard(tournament_id, db)
+    db_tournament = read_tournament(tournament_id=tournament_id, db=db)
+
+    rewards = db_tournament.rewards_range
+    reward_per_position = []
+
+    for rang, reward in rewards.items():
+        (inf, sup) = rang.split('-')
+        if inf == sup:
+            reward_per_position.append(reward)
+        else:
+            for _ in range(int(inf), int(sup) - int(inf) + 2):  # Stop is ommited
+                reward_per_position.append(reward)
+
+    for i in range(min(len(reward_per_position), len(tournament_leaderboard))):
+        give_award(tournament_leaderboard[i][0], reward_per_position[i], db)
+
+
+def give_award(username: str, reward: int, db: Session = Depends(get_db)):
+    db_user = crud.get_user_by_username(db, username)
+
+    user_data = schemas.UserUpdate(
+        points=db_user.points + reward
+    )
+    crud.update_user(db, db_user, user_data)
+
+
 @app.get("/tournaments/{tournament_id}/leaderboard")
 def leaderboard(tournament_id: UUID, db: Session = Depends(get_db)):
     db_tournament = read_tournament(tournament_id=tournament_id, db=db)
