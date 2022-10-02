@@ -4,14 +4,14 @@ Ce document a pour but d'expliquer les différents choix pris lors du développe
 Il comprend un rapide rappel des différents énoncés ainsi que les choix techniques effectué.
 
 ## Note
-Parmi tous les énoncés donnés dans le [README_OLD](.README_OLD.md), seul la distribution automatique des récompenses à la fin du tournoi n'a pas été implémenté.
+Parmi tous les énoncés donnés dans le [README_OLD](README_OLD.md), seul la distribution automatique des récompenses à la fin du tournoi n'a pas été implémenté.
 
 Dans un premier temps, une tentative d'implémentation a voulu être faite avec la libraire APScheduler. Par manque de connaissance et de temps, je n'ai pu aller au développement de cette fonctionnalité asynchrone. Cependant, la function qui se charge de distribuer les récompenses a elle été implémentée et est fonctionnelle.
 
 ## Architecture
 Pour développer cette API, une architecture porhce de celle utilisée chez Octo a été utilisée.
 L'API a ainsi été développée avec Fast API, la BDD utilisée est PostgreSQL. La version de Python utilisée est la 3.10.4
-La liste des librairies nécessaires et utilisées peut être parcouru dans le fichier [requirements.txt](.requirements.txt)
+La liste des librairies nécessaires et utilisées peut être parcouru dans le fichier [requirements.txt](requirements.txt)
 
 ## Initialisation
 Pour commencer, il convient de créer un environnement avec la version de Python utilisée pour éviter les soucis de compatibilité:
