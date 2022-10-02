@@ -43,7 +43,13 @@ class User(Base):
         assert len(value_stripped) >= 3 and len(value_stripped) <= 38, \
             "Username must be between 3 and 38 characters"
 
-        return value_stripped.strip()
+        return value_stripped
+
+    @validates('phone_number')
+    def validate_phone(self, _key, value):
+        value_stripped = value.strip()
+        assert re.match("(^[0-9]{10}$)", value), f"Incorrect phone number."
+        return value_stripped
 
     def matches(self):
         return list(
