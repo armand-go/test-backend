@@ -3,6 +3,8 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from db import engine, SessionLocal
 import datetime as D
+import random
+import pytz
 import models
 import schemas
 import crud
@@ -179,10 +181,9 @@ def register_to_tournament(
     db_tournament = crud.get_tournament(db, tournament_id=tournament_id)
     if db_tournament is None:
         raise HTTPException(status_code=404, detail="Tournament not found.")
-
-    if db_tournament.end < D.datetime.now():
+    if db_tournament.end.replace(tzinfo=pytz.UTC) < D.datetime.now().replace(tzinfo=pytz.UTC):
         raise HTTPException(status_code=406, detail="Tournament has already ended.")
-    elif db_tournament.begin < D.datetime.now():
+    elif db_tournament.begin.replace(tzinfo=pytz.UTC) < D.datetime.now().replace(tzinfo=pytz.UTC):
         raise HTTPException(status_code=406, detail="Tournament has already started.")
 
     users_registered = (
@@ -208,6 +209,15 @@ def register_to_tournament(
             )
 
         db_tournament.player_list.append(user_to_register)
+
+        tournament_data = schemas.TournamentCreateUpdate(
+            players_score={
+                **db_tournament.players_score,
+                str(user_to_register.id): 0
+            }
+        )
+        db_tournament = crud.update_tournament(db, db_tournament, tournament_data)
+
         db.add(db_tournament)
         db.commit()
         db.refresh(db_tournament)
@@ -219,7 +229,19 @@ def register_to_tournament(
     return db_tournament
 
 
-@app.post("/tournaments/{tournament_id}/match", response_model=schemas.Match)
+@app.post("/tournaments/{tournament_id}/match")
+def match(
+    tournament_id: UUID,
+    player_1_id: UUID,
+    player_2_id: UUID,
+    db: Session = Depends(get_db)
+):
+    match = initialize_match_between_users(tournament_id, player_1_id, player_2_id, db)
+    match = start_match(tournament_id, match.id, db)
+    match = result_match(tournament_id, match.id, db)
+
+
+@app.post("/tournaments/{tournament_id}/init_match", response_model=schemas.Match)
 def initialize_match_between_users(
     tournament_id: UUID,
     player_1_id: UUID,
@@ -227,13 +249,13 @@ def initialize_match_between_users(
     db: Session = Depends(get_db)
 ) -> schemas.Match:
     db_tournament = read_tournament(tournament_id=tournament_id, db=db)
-    if db_tournament.end < D.datetime.now():
+    if db_tournament.end.replace(tzinfo=pytz.UTC) < D.datetime.now().replace(tzinfo=pytz.UTC):
         raise HTTPException(status_code=406, detail="Tournament has already ended.")
-    elif D.datetime.now() < db_tournament.begin:
+    elif D.datetime.now().replace(tzinfo=pytz.UTC) < db_tournament.begin.replace(tzinfo=pytz.UTC):
         raise HTTPException(status_code=406, detail="Tournament has not started yet.")
 
     read_user(user_id=player_1_id, db=db)
-    read_user(user_id=player_1_id, db=db)
+    read_user(user_id=player_2_id, db=db)
 
     is_player_1_registered = (
         db.
@@ -266,26 +288,87 @@ def initialize_match_between_users(
     )
 
 
+@app.post("/tournaments/{tournament_id}/match/{match_id}/start", response_model=schemas.Match)
+def start_match(
+    tournament_id: UUID,
+    match_id: UUID,
+    db: Session = Depends(get_db)
+) -> schemas.Match:
+    db_tournament = read_tournament(tournament_id=tournament_id, db=db)
+    if db_tournament.end.replace(tzinfo=pytz.UTC) < D.datetime.now().replace(tzinfo=pytz.UTC):
+        raise HTTPException(status_code=406, detail="Tournament has already ended.")
+    elif D.datetime.now().replace(tzinfo=pytz.UTC) < db_tournament.begin.replace(tzinfo=pytz.UTC):
+        raise HTTPException(status_code=406, detail="Tournament has not started yet.")
+
+    read_match(match_id, db)
+    score_one, score_two = one_player_turn(), one_player_turn()
+    result = schemas.MatchResult.draw
+    if score_one < score_two:
+        result = schemas.MatchResult.player2
+    elif score_one > score_two:
+        result = schemas.MatchResult.player1
+
+    match_data = schemas.MatchUpdate(
+        score_one=score_one,
+        score_two=score_two,
+        result=result
+    )
+
+    return update_match(
+        match_id=match_id,
+        match=match_data,
+        db=db
+    )
+
+
+def one_player_turn():
+    """
+    Placeholder function.
+    Can be improved with a true game logic.
+    """
+    score = random.randint(5, 100)
+    return score
+
+
 @app.post("/tournaments/{tournament_id}/match/{match_id}/result", response_model=schemas.Match)
 def result_match(
     tournament_id: UUID,
     match_id: UUID,
-    match_result: schemas.MatchUpdate,
     db: Session = Depends(get_db)
 ) -> schemas.Match:
     db_tournament = read_tournament(tournament_id=tournament_id, db=db)
-    if db_tournament.end < D.datetime.now():
+    if db_tournament.end.replace(tzinfo=pytz.UTC) < D.datetime.now().replace(tzinfo=pytz.UTC):
         raise HTTPException(status_code=406, detail="Tournament has already ended.")
-    elif D.datetime.now() < db_tournament.begin:
+    elif D.datetime.now().replace(tzinfo=pytz.UTC) < db_tournament.begin.replace(tzinfo=pytz.UTC):
         raise HTTPException(status_code=406, detail="Tournament has not started yet.")
-    return update_match(
-        match_id=match_id,
-        match=match_result,
-        db=db
+
+    db_match = read_match(match_id, db)
+    match_result = db_match.result
+
+    players_score = {}
+    for key, value in db_tournament.players_score.items():
+        players_score[key] = value
+
+    if match_result == schemas.MatchResult.player1:
+        players_score[str(db_match.player_one_id)] += 3
+    elif match_result == schemas.MatchResult.player2:
+        players_score[str(db_match.player_two_id)] += 3
+    else:
+        players_score[str(db_match.player_one_id)] += 1
+        players_score[str(db_match.player_two_id)] += 1
+
+    tournament_data = schemas.TournamentCreateUpdate(
+        players_score=players_score
     )
+    db_tournament = crud.update_tournament(db, db_tournament, tournament_data)
 
 
 @app.get("/tournaments/{tournament_id}/leaderboard")
 def leaderboard(tournament_id: UUID, db: Session = Depends(get_db)):
     db_tournament = read_tournament(tournament_id=tournament_id, db=db)
-    return db_tournament.leaderboard()
+    leaderboard = db_tournament.leaderboard()
+    for i in range(len(leaderboard)):
+        user_id = leaderboard[i][0]
+        db_user = crud.get_user(db, user_id)
+        leaderboard[i][0] = db_user.username
+    return leaderboard

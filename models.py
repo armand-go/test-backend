@@ -48,7 +48,7 @@ class User(Base):
     @validates('phone_number')
     def validate_phone(self, _key, value):
         value_stripped = value.strip()
-        assert re.match("(^[0-9]{10}$)", value), f"Incorrect phone number."
+        assert re.match("(^[0-9]{10}$)", value_stripped), "Incorrect phone number."
         return value_stripped
 
     def matches(self):
@@ -89,6 +89,7 @@ class Tournament(Base):
     player_list = relationship(
         "User", secondary=tournament_user, back_populates="tournaments_registered"
     )
+    players_score = Column(JSONB, default={})
 
     begin = Column(
         DateTime(timezone=True),
@@ -100,14 +101,14 @@ class Tournament(Base):
         nullable=False,
         default=D.datetime.now() + D.timedelta(hours=1)
     )
-    rewards_sum = Column(Integer, default=0)
 
-    rewards_range = Column(JSONB, default="{}")
+    rewards_sum = Column(Integer, default=0)
+    rewards_range = Column(JSONB, default={})
 
     def leaderboard(self):
         leaderboard = []
-        for player in self.player_list:
-            leaderboard.append((player.username, player.points))
+        for key, value in self.players_score.items():
+            leaderboard.append([key, value])
 
         # Bubble Sort
         length = len(leaderboard)
