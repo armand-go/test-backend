@@ -4,6 +4,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.ext.declarative import declarative_base
+import datetime as D
 import uuid
 import re
 
@@ -69,8 +70,16 @@ class Tournament(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     max_player = Column(Integer, default=20)
 
-    begin = Column(DateTime(timezone=True), nullable=False)
-    end = Column(DateTime(timezone=True), nullable=False)
+    begin = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=D.datetime.utcnow() + D.timedelta(minutes=30)
+    )
+    end = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=D.datetime.utcnow() + D.timedelta(hours=1)
+    )
     rewards_sum = Column(Integer, default=0)
 
     rewards_range = Column(JSONB, default="{}")
