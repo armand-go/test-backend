@@ -99,6 +99,11 @@ def create_tournament(db: Session, tournament: schemas.TournamentCreate):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e) + ". Check the range has the correct format."
+        )
     return db_tournament
 
 

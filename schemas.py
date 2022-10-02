@@ -2,7 +2,7 @@ from typing import Optional, Dict
 from uuid import UUID
 from enum import Enum
 from datetime import datetime
-from pydantic import BaseModel, Json
+from pydantic import BaseModel
 
 
 class MatchResult(str, Enum):

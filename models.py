@@ -33,6 +33,13 @@ class User(Base):
 
         return value_stripped.strip()
 
+    def matches(self):
+        return list(
+            set(
+                self.matches_as_player_one.extends(self.matches_as_player_two)
+            )
+        )
+
 
 class Match(Base):
     __tablename__ = "matches"
@@ -71,6 +78,6 @@ class Tournament(Base):
     @validates('rewards_range')
     def validate_rewards_range(self, _key, value):
         for key in value.keys():
-            assert re.match("(^\d{1,2}-\d{1,2}$)", key), \
+            assert re.match("(^[0-9]{1,2}-[0-9]{1,2}$)", key), \
                 f"The key {key} doesn't have the correct format"
         return value
