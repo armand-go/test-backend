@@ -87,16 +87,32 @@ class Tournament(Base):
     begin = Column(
         DateTime(timezone=True),
         nullable=False,
-        default=D.datetime.utcnow() + D.timedelta(minutes=30)
+        default=D.datetime.now() + D.timedelta(minutes=30)
     )
     end = Column(
         DateTime(timezone=True),
         nullable=False,
-        default=D.datetime.utcnow() + D.timedelta(hours=1)
+        default=D.datetime.now() + D.timedelta(hours=1)
     )
     rewards_sum = Column(Integer, default=0)
 
     rewards_range = Column(JSONB, default="{}")
+
+    def leaderboard(self):
+        leaderboard = []
+        for player in self.player_list:
+            leaderboard.append((player.username, player.points))
+
+        # Bubble Sort
+        length = len(leaderboard)
+        for i in range(0, length):
+            for j in range(0, length - i - 1):
+                if (leaderboard[j][1] > leaderboard[j + 1][1]):
+                    temp = leaderboard[j]
+                    leaderboard[j] = leaderboard[j + 1]
+                    leaderboard[j + 1] = temp
+        leaderboard.reverse()  # Descending order
+        return leaderboard
 
     @validates('rewards_range')
     def validate_rewards_range(self, _key, value):
