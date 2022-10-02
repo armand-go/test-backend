@@ -58,7 +58,7 @@ def delete_user(db: Session, db_user: schemas.User):
     if user is not None:
         user_data = schemas.UserUpdate(
             username="Anonymous",
-            phone_number="Anonymous",
+            phone_number="0000000000",
             points=0
         )
         update_user(db, db_user, user_data)
