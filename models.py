@@ -1,6 +1,6 @@
 from sqlalchemy.orm import validates, relationship
 from sqlalchemy import (
-    Column, String, Integer, ForeignKey, Enum, DateTime
+    Column, String, Integer, ForeignKey, Enum, DateTime, Table
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.ext.declarative import declarative_base
@@ -9,6 +9,13 @@ import uuid
 import re
 
 Base = declarative_base()
+
+tournament_user = Table(
+    "tournament_user",
+    Base.metadata,
+    Column("tournament_id", ForeignKey("tournaments.id")),
+    Column("user_id", ForeignKey("users.id"))
+)
 
 
 class User(Base):
@@ -24,6 +31,10 @@ class User(Base):
     )
     matches_as_player_two = relationship(
         "Match", foreign_keys='Match.player_two_id', back_populates="player_two"
+    )
+
+    tournaments_registered = relationship(
+        "Tournament", secondary=tournament_user, back_populates="player_list"
     )
 
     @validates('username')
@@ -69,6 +80,9 @@ class Tournament(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     max_player = Column(Integer, default=20)
+    player_list = relationship(
+        "User", secondary=tournament_user, back_populates="tournaments_registered"
+    )
 
     begin = Column(
         DateTime(timezone=True),

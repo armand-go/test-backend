@@ -2,6 +2,7 @@ from uuid import UUID
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from db import engine, SessionLocal
+import datetime as D
 import models
 import schemas
 import crud
@@ -99,8 +100,7 @@ def create_tournament(tournament: schemas.TournamentCreateUpdate, db: Session = 
 
 @app.get("/tournaments/", response_model=list[schemas.Tournament])
 def read_tournaments(db: Session = Depends(get_db), skip: int = 0, limit: int = 100):
-    tournaments = crud.get_tournaments(db, skip, limit)
-    return tournaments
+    return crud.get_tournaments(db, skip, limit)
 
 
 @app.get("/tournaments/{tournament_id}", response_model=schemas.Tournament)
@@ -120,6 +120,12 @@ def update_tournament(
     db_tournament = crud.get_tournament(db, tournament_id=tournament_id)
     if db_tournament is None:
         raise HTTPException(status_code=404, detail="Tournament not found.")
+
+    if db_tournament.end < D.datetime.now():
+        raise HTTPException(status_code=406, detail="Tournament has already ended.")
+    elif db_tournament.begin < D.datetime.now():
+        raise HTTPException(status_code=406, detail="Tournament has already started.")
+
     return crud.update_tournament(db, db_tournament, tournament)
 
 
@@ -127,5 +133,90 @@ def update_tournament(
 def delete_tournament(tournament_id: UUID, db: Session = Depends(get_db)):
     db_tournament = crud.get_tournament(db, tournament_id=tournament_id)
     if db_tournament is None:
-        raise HTTPException(status_code=404, detail="Match not found.")
+        raise HTTPException(status_code=404, detail="Tournament not found.")
     return crud.delete_tournament(db, db_tournament)
+
+
+@app.post("/tournaments/{tournament_id}/register", status_code=status.HTTP_200_OK)
+def register_to_tournament(
+    tournament_id: UUID,
+    user: schemas.UserCreate,
+    db: Session = Depends(get_db)
+):
+    db_tournament = crud.get_tournament(db, tournament_id=tournament_id)
+    if db_tournament is None:
+        raise HTTPException(status_code=404, detail="Tournament not found.")
+
+    if db_tournament.end < D.datetime.now():
+        raise HTTPException(status_code=406, detail="Tournament has already ended.")
+    elif db_tournament.begin < D.datetime.now():
+        raise HTTPException(status_code=406, detail="Tournament has already started.")
+
+    users_registered = (
+        db.
+        query(models.tournament_user)
+        .filter(models.tournament_user.c.tournament_id == tournament_id)
+        .count()
+    )
+    if users_registered < db_tournament.max_player:
+        user_created = create_user(user, db)
+        db_tournament.player_list.append(user_created)
+        db.add(db_tournament)
+        db.commit()
+        db.refresh(db_tournament)
+    else:
+        raise HTTPException(
+            status_code=406,
+            detail="Too many players registered in this tournament."
+        )
+    return db_tournament
+
+
+@app.post("/tournaments/{tournament_id}/fight", status_code=status.HTTP_200_OK)
+def match_between_users(
+    tournament_id: UUID,
+    player_1_id: UUID,
+    player_2_id: UUID,
+    db: Session = Depends(get_db)
+):
+    db_tournament = crud.get_tournament(db, tournament_id=tournament_id)
+    if db_tournament is None:
+        raise HTTPException(status_code=404, detail="Tournament not found.")
+
+    if db_tournament.end < D.datetime.now():
+        raise HTTPException(status_code=406, detail="Tournament has already ended.")
+    elif D.datetime.now() < db_tournament.begin:
+        raise HTTPException(status_code=406, detail="Tournament has not started yet.")
+
+    read_user(user_id=player_1_id, db=db)
+    read_user(user_id=player_1_id, db=db)
+
+    is_player_1_registered = (
+        db.
+        query(models.tournament_user)
+        .filter(models.tournament_user.c.user_id == player_1_id)
+        .first()
+    )
+    if is_player_1_registered is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Player 1 is not registered to this tournament."
+        )
+    is_player_2_registered = (
+        db.
+        query(models.tournament_user)
+        .filter(models.tournament_user.c.user_id == player_2_id)
+        .first()
+    )
+    if is_player_2_registered is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Player 2 is not registered to this tournament."
+        )
+    return create_match(
+        match=schemas.MatchCreate(
+            player_one_id=player_1_id,
+            player_two_id=player_2_id,
+        ),
+        db=db
+    )
