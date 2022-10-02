@@ -78,7 +78,6 @@ def update_user(
     return crud.update_user(db, db_user, user)
 
 
-# TODO: Delete user shoudln't really delete user, but anonymising it.
 @app.delete("/users/delete/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(user_id: UUID, db: Session = Depends(get_db)):
     db_user = crud.get_user(db, user_id=user_id)

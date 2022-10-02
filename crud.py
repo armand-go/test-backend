@@ -54,8 +54,14 @@ def update_user(db: Session, db_user: schemas.User, user_data: schemas.UserUpdat
 
 
 def delete_user(db: Session, db_user: schemas.User):
-    db.delete(db_user)
-    db.commit()
+    user = get_user(db, db_user.id)
+    if user is not None:
+        user_data = schemas.UserUpdate(
+            username="Anonymous",
+            phone_number="Anonymous",
+            points=0
+        )
+        update_user(db, db_user, user_data)
 
 
 def create_match(db: Session, match: schemas.Match):

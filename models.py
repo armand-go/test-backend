@@ -22,8 +22,8 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    username = Column(String, unique=True, nullable=False)
-    phone_number = Column(String, unique=True)
+    username = Column(String, nullable=False)
+    phone_number = Column(String)
     points = Column(Integer, default=0)
 
     matches_as_player_one = relationship(
