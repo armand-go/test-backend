@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from uuid import UUID
 import models
 import schemas
@@ -23,12 +24,23 @@ def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
 
 
+def get_user_by_phone_number(db: Session, phone_number: str):
+    return db.query(models.User).filter(models.User.phone_number == phone_number).first()
+
+
 def get_user(db: Session, user_id: UUID):
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
-def get_users(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.User).offset(skip).limit(limit).all()
+def get_users(db: Session, skip: int = 0, limit: int = 100, filter: str = ""):
+    return (
+        db.
+        query(models.User)
+        .filter(func.lower(models.User.username).contains(func.lower(filter)))
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
 def update_user(db: Session, db_user: schemas.User, user_data: schemas.UserUpdate):
@@ -42,8 +54,14 @@ def update_user(db: Session, db_user: schemas.User, user_data: schemas.UserUpdat
 
 
 def delete_user(db: Session, db_user: schemas.User):
-    db.delete(db_user)
-    db.commit()
+    user = get_user(db, db_user.id)
+    if user is not None:
+        user_data = schemas.UserUpdate(
+            username="Anonymous",
+            phone_number="Anonymous",
+            points=0
+        )
+        update_user(db, db_user, user_data)
 
 
 def create_match(db: Session, match: schemas.Match):

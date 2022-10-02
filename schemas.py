@@ -55,6 +55,7 @@ class TournamentCreateUpdate(BaseModel):
     max_player: Optional[int] = None
     begin: Optional[datetime] = None
     end: Optional[datetime] = None
+    players_score: Optional[Dict[str, int]] = {}
     rewards_range: Optional[Dict[str, int]] = {}
 
 
